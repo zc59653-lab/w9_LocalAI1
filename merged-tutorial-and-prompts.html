@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> Ollama + Open WebUI 教學與提示詞說明</title>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --card: #ffffff;
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --accent: #059669;
+    --danger: #dc2626;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --code-bg: #0f172a;
+    --code-text: #e2e8f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Microsoft JhengHei", "PingFang TC", "Noto Sans TC", "Heiti TC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    padding-bottom: 60px;
+  }
+  a { color: var(--primary); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .top-tabs {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    margin-bottom: 24px;
+    border-radius: 0 0 16px 16px;
+    display: flex;
+    gap: 2px;
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) var(--bg);
+  }
+  .top-tabs::-webkit-scrollbar { height: 4px; }
+  .top-tabs::-webkit-scrollbar-track { background: var(--bg); }
+  .top-tabs::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 4px; }
+  .top-tabs button {
+    flex: 0 0 auto;
+    padding: 10px 20px;
+    background: transparent;
+    border: none;
+    border-radius: 10px 10px 0 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.2s, background 0.15s;
+    white-space: nowrap;
+  }
+  .top-tabs button:hover { color: var(--primary); }
+  .top-tabs button.active {
+    color: var(--primary);
+    background: rgba(37, 99, 235, 0.1);
+    border-bottom: 3px solid var(--primary);
+  }
+  .container { max-width: 920px; margin: 0 auto; padding: 0 20px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 30px;
+    margin-bottom: 26px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+  }
+  h2 { font-size: 1.45rem; border-left: 6px solid var(--primary); padding-left: 16px; margin-bottom: 20px; color: var(--text); display: flex; align-items: center; gap: 10px; }
+  h3 { font-size: 1.15rem; margin-top: 24px; margin-bottom: 10px; color: var(--primary-dark); }
+  p { margin-bottom: 12px; }
+  ul, ol { margin-bottom: 16px; padding-left: 26px; }
+  li { margin-bottom: 7px; }
+  .badge { display: inline-block; padding: 3px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 800; margin-right: 8px; margin-bottom: 6px; }
+  .badge-llama { background: #8b5cf6; color: #fff; }
+  .badge-mistral { background: #06b6d4; color: #fff; }
+  .badge-green { background: #10b981; color: #fff; }
+  pre { background: var(--code-bg); color: var(--code-text); border-radius: 12px; padding: 18px; overflow-x: auto; font-family: "Cascadia Code", "Consolas", "Monaco", monospace; font-size: 0.88rem; line-height: 1.55; margin: 16px 0; border: 1px solid #334155; position: relative; }
+  code { font-family: "Cascadia Code", "Consolas", "Monaco", "Courier New", monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 5px; font-size: 0.9em; color: var(--primary-dark); }
+  pre code { background: transparent; padding: 0; color: inherit; }
+  .copy-hint { position: absolute; top: 10px; right: 12px; font-size: 0.75rem; color: #64748b; cursor: pointer; }
+  .copy-hint:hover { color: #22d3ee; }
+  .alert { padding: 16px 20px; border-radius: 12px; margin: 18px 0; border-left: 6px solid; }
+  .alert-info { background: #e0f2fe; border-color: var(--primary); color: #0c4a6e; }
+  .alert-success { background: #d1fae5; border-color: var(--accent); color: #064e3b; }
+  .alert-warning { background: #fef3c7; border-color: #d97706; color: #92400e; }
+  .alert-danger { background: #fee2e2; border-color: var(--danger); color: #991b1b; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9rem; }
+  th, td { border: 1px solid var(--border); padding: 12px 14px; text-align: left; vertical-align: top; }
+  th { background: #f8fafc; font-weight: 800; color: var(--text); }
+  footer { text-align: center; padding: 36px 20px; color: var(--muted); font-size: 0.9rem; border-top: 1px solid var(--border); }
+  #topBtn { position: fixed; bottom: 26px; right: 26px; background: var(--primary); color: #fff; border: none; border-radius: 50%; width: 50px; height: 50px; cursor: pointer; display: none; font-size: 1.3rem; box-shadow: 0 6px 16px rgba(37,99,235,0.35); z-index: 100; }
+  #topBtn:hover { background: var(--primary-dark); }
+  @media (max-width: 640px) { header h1 { font-size: 1.6rem; } .card { padding: 22px; } .top-tabs button { padding: 8px 12px; font-size: 0.85rem; } }
+</style>
+</head>
+<body>
+
+<!-- ========= 頁首：機構與身份認證 ========= -->
+<header>
+  <div>
+    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+    </svg>
+    國立清華大學數理教育研究所 陳冠宇研究生
+  </div>
+</header>
+
+<!-- ========= 頂部標籤導航 ========= -->
+<div class="top-tabs" role="tablist" aria-label="內容章節">
+  <button class="tab-link active" data-tab="prompts">提示詞列表</button>
+  <button class="tab-link" data-tab="explanation">逐行說明</button>
+  <button class="tab-link" data-tab="points">要點表格</button>
+</div>
+
+<div class="container">
+
+  <!-- ======================== 章節一：對話範圍內的提示詞（未修改） ======================== -->
+  <div id="prompts" class="tab-content active">
+    <h2>對話範圍內的提示詞（未修改）</h2>
+
+    <p><strong>原始使用者請求（未修改）：</strong></p>
+    <pre><code>請製作一份繁体中文教學，主题是 Ollama 搭配 Open WebUI 架設私人 AI 聊天介面。要求：單一自包含 HTML 檔、圖片全部內嵌、離線也能顯示、不得引用外部圖片 URL。內容要能讓新手從安裝一路做到跑通。</code></pre>
+
+    <p><strong>系統提示詞（未修改）——係自 teaching-material-prompt.html 系統指令）：</strong></p>
+    <pre><code>You are an AI assistant tasked with creating a complete, single-file HTML tutorial that is self-contained (all images SVG-embedded, no external URLs), offline-capable, and targeted at beginners learning to set up a private AI chat interface using Ollama and Open WebUI. The tutorial must be in Traditional Chinese, cover installation from scratch through running a working chat, and include tabbed navigation at the top of the page allowing section switching. The generated HTML must:
+1. Be a single file with all content inline (no external CSS/JS/image URLs).
+2. Embed all icons and illustrations as SVG directly in the HTML.
+3. Not reference any external image CDN or URLs.
+4. Feature top-of-page tabs that switch content sections.
+5. Include a specific tag: "不得引用外部圖片 URL" somewhere in the content or metadata.
+6. Model usage: First model Llama 3.2, second model Mistral.
+7. Include hardware requirements, step-by-step commands, verification commands, and FAQ.
+8. Add interactive elements: code copy buttons, tab switching via JavaScript.
+9. Contain a footer crediting the student: 國立清華大學數理教育研究所 陳冠宇研究生.
+10. The tutorial must be suitable for complete beginners, with clear instructions and troubleshooting.
+
+Generate the full HTML document now.</code></pre>
+  </div>
+
+  <!-- ======================== 章節二：提示詞逐一列出並說明功能（中文） ======================== -->
+  <div id="explanation" class="tab-content">
+    <h2>提示詞逐一列出並說明功能（中文）</h2>
+
+    <p>下面將系統提示詞中的 10 點約束，逐一用繁體中文列出並說明其在生成教材時的功能與作用：</p>
+
+    <ol>
+      <li>
+        <p><strong>原文：</strong> Be a single file with all content inline (no external CSS/JS/image URLs).</p>
+        <p><strong>功能說明：</strong> 確保生成的 HTML 教材僅為一個 .html 檔案，所有樣式、行為與圖片皆透過內聯方式寫在檔案內部，使用者無需下載額外資源，離線即可完整閱讀與使用。</p>
+      </li>
+      <li>
+        <p><strong>原文：> Embed all icons and illustrations as SVG directly in the HTML.</strong></p>
+        <p><strong>功能說明：</strong> 所有圖示、流程圖與裝飾圖均以 SVG 碼直接寫在 HTML 中，避免依賴外部圖片連線，防止圖片載入失敗或被網路過濾，同時減少對 CDN 的依賴。</p>
+      </li>
+      <li>
+        <p><strong>原文： Not reference any external image CDN or URLs.</strong></p>
+        <p><strong>功能說明：</strong> 明確禁止在 HTML 中出現任何外部圖片網址（如 Imgur、GitHub raw CDN 等），這是為了保證教材的離線特性，使用者儲存檔案後無需網路即可瀏覽。</p>
+      </li>
+      <li>
+        <p><strong>原文： Feature top-of-page tabs that switch content sections.</strong></p>
+        <p><strong>功能說明：</strong> 在頁面頂部放置標籤導航列，使用者可直接點選「安裝 Ollama」、「驗證運行」、「模型下載」等章節，跳轉對應內容，提升教材的可讀性與瀏覽效率，減少手動滾動尋找的時間。</p>
+      </li>
+      <li>
+        <p><strong>原文： Include a specific tag: "不得引用外部圖片 URL" somewhere in the content or metadata.</strong></p>
+        <p><strong>功能說明：</strong> 作為一個強制審核關鍵字，確認生成的 HTML 內容是否真的遵守「不得引用外部圖片 URL」的規定，同時提醒閱讀者與開發者注意這項限制。</p>
+      </li>
+      <li>
+        <p><strong>原文： Model usage: First model Llama 3.2, second model Mistral.</strong></p>
+        <p><strong>功能說明：</strong> 明確教材將針對這兩個特定模型編寫步驟與範例。讀者可以依照說明先下載 Llama 3.2 作為入門模型，再嘗試 Mistral 作為第二模型進行對比，確保教學路徑明確、模型選擇有據。</p>
+      </li>
+      <li>
+        <p><strong>原文： Include hardware requirements, step-by-step commands, verification commands, and FAQ.</strong></p>
+        <p><strong>功能說明：</strong> 確保教材完整涵蓋電腦硬體最低需求（如 RAM、儲存空間、GPU 設定），提供每一步的具體指令（如 <code>ollama pull</code>、<code>docker run</code>），說明如何驗證服務是否正常運行，以及收錄常見問題與解決方案，幫助新手避開常見坑。</p>
+      </li>
+      <li>
+        <p><strong>原文： Add interactive elements: code copy buttons, tab switching via JavaScript.</strong></p>
+        <p><strong>功能說明：</strong> 在程式碼區塊底部加入「一鍵複製」按鈕，讓使用者能直接複製指令；透過 JavaScript 實現標籤頁的平滑切換與狀態管理，提升教材的實用性與現代網頁體驗。</p>
+      </li>
+      <li>
+        <p><strong>原文： Contain a footer crediting the student: 國立清華大學數理教育研究所 陳冠宇研究生.</strong></p>
+        <p><strong>功能說明：</strong> 在頁尾註明教材的作者與歸屬，建立學術來源與責任歸屬，同時也是此 HTML 檔案出處的身份認證，符合教育資源的規範與歸屬性。</p>
+      </li>
+      <li>
+        <p><strong>原文： The tutorial must be suitable for complete beginners, with clear instructions and troubleshooting.</strong></p>
+        <p><strong>功能說明：</strong> 確保教材的敘述語言簡單易懂，步驟標註清楚，並釀排常見錯誤與解決方案，讓完全沒有 AI 或 伺服器 經驗的新手也能跟隨完成從安裝到跑通的全過程。</p>
+      </li>
+    </ol>
+
+  </div>
+
+  <!-- ======================== 章節三：提示詞設計要點表格 ======================== -->
+  <div id="points" class="tab-content">
+    <h2>提示詞設計要點表格</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>次序</th>
+          <th>設計要點</th>
+          <th>核心目的</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>單一自包含 HTML 檔</td>
+          <td>讓教材成為一個獨立的 .html 檔案，使用者僅下載一次即可離線永久使用，無需額外安裝或網路連線。</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>SVG 圖片內嵌（無外部圖片 URL）</td>
+          <td>確保教材在離線環境下圖示與流程圖能正常顯示，避免因為圖片連線失敗而導致教材閲讀中斷。</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>繁体中文語言環境</td>
+          <td>照顧台灣、香港與馬來西亞等地區使用者的語言習慣，讀者無需翻譯即可理解每一步驟與說明。</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>頁首標籤分頁導航</td>
+          <td>使用者可直接點選章節標籤切換內容，提升瀏覽效率，減少手動滾動尋找資訊的時間成本。</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>明確模型組合（Llama 3.2 + Mistral）</td>
+          <td>先以輕量的 Llama 3.2 作為入門範例，再以 Mistral 作為第二模型進行對比，引導讀者依硬體能力自選模型。</td>
+        </tr>
+        <tr>
+          <td>6</td>
+          <td>硬體需求、指令與 FAQ</td>
+          <td>說明最低 RAM、建議儲存空間、Docker 等需求；提供具體的 <code>ollama</code> 與 <code>docker</code> 指令；收錄常見連線失敗、模型慢等問題的解決方案。</td>
+        </tr>
+        <tr>
+          <td>7</td>
+          <td>互動元件（一鍵複製、JavaScript 標籤切換）</td>
+          <td>使用者可直接複製程式碼區塊的指令；透過點選標籤即時切換章節，提高教材的實用性與現代網頁體驗。</td>
+        </tr>
+        <tr>
+          <td>8</td>
+          <td>頁尾作者認證</td>
+          <td>註明「國立清華大學數理教育研究所 陳冠宇研究生」，建立教材出處、學術誠信與責任歸屬。</td>
+        </tr>
+        <tr>
+          <td>9</td>
+          <td>適合完全新手</td>
+          <td>語言簡單、步驟細緻、輔以故障排除說明，讓零經驗使用者也能跟隨完成整個架設流程。</td>
+        </tr>
+        <tr>
+          <td>10</td>
+          <td>不得引用外部圖片 URL</td>
+          <td>強制約束，確保生成的 HTML 檔案絕對離線可用，避免因外部連線失敗或內容被封鎖而導致教材效果大幅降低。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p><small>說明：上表摘錄了系統提示詞中所有約束與目標，方便教育工作者、開發者快速檢視「我們在設計這份教材時必須遵守的核心要點」。每一項都對應著使用者體驗的某一個面（易用性、隱私、技術實現、學習門檻等），共同構成了「私人 AI 聊天介面完整教學」的品質底線。</small></p>
+  </div>
+
+</div>
+
+<!-- ========= 回到頂部按鈕 ========= -->
+<button id="topBtn" title="回到頂部">↑</button>
+
+<!-- ========= JavaScript：標籤切換與互動 ========= -->
+<script>
+  // Top tabs switcher
+  function setupTopTabs() {
+    const tabs = document.querySelectorAll('.tab-link');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        tabs.forEach(t => t.classList.remove('active'));
+        this.classList.add('active');
+
+        tabContents.forEach(c => c.classList.remove('active'));
+
+        const targetId = this.getAttribute('data-tab');
+        const targetContent = document.getElementById(targetId);
+        if (targetContent) {
+          targetContent.classList.add('active');
+        }
+      });
+    });
+  }
+
+  // FAQ toggle (if needed)
+  function toggleFaq(el) {
+    const item = el.parentElement;
+    const open = item.classList.toggle('open');
+    el.querySelector('span').textContent = open ? '▲' : '▼';
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    setupTopTabs();
+  });
+
+  // Copy code hint
+  document.querySelectorAll('pre').forEach(pre => {
+    const hint = document.createElement('span');
+    hint.className = 'copy-hint';
+    hint.textContent = '點擊複製';
+    pre.appendChild(hint);
+    pre.addEventListener('click', () => {
+      navigator.clipboard.writeText(pre.innerText).then(() => {
+        hint.textContent = '已複製！';
+        hint.style.color = '#059669';
+        setTimeout(() => { hint.textContent = '點擊複製'; hint.style.color = ''; }, 1500);
+      });
+    });
+  });
+
+  // Scroll to top
+  const topBtn = document.getElementById('topBtn');
+  window.onscroll = function() {
+    topBtn.style.display = (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) ? 'block' : 'none';
+  };
+  topBtn.onclick = function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+</script>
+
+</body>
+</html>
